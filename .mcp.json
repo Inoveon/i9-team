@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "i9-team": {
+      "command": "node",
+      "args": ["/Users/leechardes/mcp-servers/i9-team/dist/index.js"]
+    },
+    "i9-agent-memory": {
+      "command": "node",
+      "args": ["/Users/leechardes/mcp-servers/i9-agent-memory/dist/index.js"],
+      "env": {
+        "VAULT_NAME": "i9-smart-pdv",
+        "VAULT_PATH": "/Users/leechardes/Projetos/inoveon/producao/i9_smart_pdv_web/.memory"
+      }
+    }
+  }
+}

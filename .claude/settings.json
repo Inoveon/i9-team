@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__i9-team__team_list_agents",
+      "mcp__i9-team__team_send",
+      "mcp__i9-team__team_check",
+      "mcp__i9-team__team_note_read",
+      "mcp__i9-team__team_note_write",
+      "mcp__i9-team__team_note_list",
+      "mcp__i9-agent-memory__search",
+      "mcp__i9-agent-memory__note_write",
+      "mcp__i9-agent-memory__note_read",
+      "Bash(git *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(flutter *)",
+      "Bash(make *)",
+      "Bash(tmux *)"
+    ]
+  }
+}
