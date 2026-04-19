@@ -1,3 +1,11 @@
+[submodule "backend"]
+	path = backend
+	url = https://github.com/Inoveon/i9-team-backend.git
+
+[submodule "frontend"]
+	path = frontend
+	url = https://github.com/Inoveon/i9-team-frontend.git
+
 [submodule "mobile"]
 	path = mobile
 	url = https://github.com/Inoveon/i9-team-mobile.git
