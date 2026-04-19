@@ -7,6 +7,8 @@
       "mcp__i9-team__team_note_read",
       "mcp__i9-team__team_note_write",
       "mcp__i9-team__team_note_list",
+      "mcp__i9-team__team_detect_menu",
+      "mcp__i9-team__team_select_option",
       "mcp__i9-agent-memory__search",
       "mcp__i9-agent-memory__note_write",
       "mcp__i9-agent-memory__note_read",

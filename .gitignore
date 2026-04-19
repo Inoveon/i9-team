@@ -1,0 +1,20 @@
+node_modules/
+node-compile-cache/
+
+# Playwright MCP logs
+.playwright-mcp/
+
+# Screenshots temporários
+*.png
+*.jpg
+
+# DOM dumps
+dom-*.json
+
+# Claude scheduled tasks lock
+.claude/scheduled_tasks.lock
+
+# Environment
+.env
+.env.*
+!.env.example
