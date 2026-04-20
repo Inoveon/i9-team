@@ -18,3 +18,4 @@ dom-*.json
 .env
 .env.*
 !.env.example
+.mcp.json
