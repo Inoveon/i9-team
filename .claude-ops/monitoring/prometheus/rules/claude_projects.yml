@@ -1,0 +1,69 @@
+groups:
+
+  # ── Agregações por projeto ─────────────────────────────────────────────────
+  - name: claude_project_aggregates
+    interval: 30s
+    rules:
+
+      # CPU total por projeto (user + system, rate 1m)
+      - record: claude_project:cpu_rate1m:sum
+        expr: |
+          sum by (project) (
+            rate(claude_agent_cpu_user_seconds_total[1m])
+            + rate(claude_agent_cpu_system_seconds_total[1m])
+          )
+
+      # CPU por projeto+agente (user + system, rate 1m)
+      - record: claude_agent:cpu_rate1m
+        expr: |
+          rate(claude_agent_cpu_user_seconds_total[1m])
+          + rate(claude_agent_cpu_system_seconds_total[1m])
+
+      # RAM total por projeto em MiB
+      - record: claude_project:memory_rss_mib:sum
+        expr: |
+          sum by (project) (
+            claude_agent_memory_rss_bytes
+          ) / 1024 / 1024
+
+      # RAM por agente em MiB
+      - record: claude_agent:memory_rss_mib
+        expr: claude_agent_memory_rss_bytes / 1024 / 1024
+
+      # Número total de processos por projeto
+      - record: claude_project:agent_count:sum
+        expr: sum by (project) (claude_agent_count)
+
+  # ── Alertas de consumo excessivo ──────────────────────────────────────────
+  - name: claude_resource_alerts
+    rules:
+
+      # Alerta se um único agente consumir mais de 80% de 1 core
+      - alert: ClaudeAgentHighCPU
+        expr: claude_agent:cpu_rate1m > 0.80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Agente Claude com CPU alta"
+          description: "{{ $labels.project }}/{{ $labels.agent }} usando {{ $value | humanizePercentage }} de CPU há 2min"
+
+      # Alerta se RAM de um agente ultrapassar 1.5 GiB
+      - alert: ClaudeAgentHighMemory
+        expr: claude_agent:memory_rss_mib > 1536
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Agente Claude com memória alta"
+          description: "{{ $labels.project }}/{{ $labels.agent }} usando {{ $value | humanize }}MiB RSS há 5min"
+
+      # Alerta se RAM total de um projeto ultrapassar 8 GiB
+      - alert: ClaudeProjectHighMemory
+        expr: claude_project:memory_rss_mib:sum > 8192
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Projeto Claude com memória crítica"
+          description: "Projeto {{ $labels.project }} consumindo {{ $value | humanize }}MiB RSS"

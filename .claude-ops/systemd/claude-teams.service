@@ -1,0 +1,17 @@
+[Unit]
+Description=Claude Code Teams Boot
+After=network.target multi-user.target
+Wants=network.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+Environment=HOME=/home/ubuntu
+ExecStartPre=/bin/sleep 15
+ExecStart=/home/ubuntu/.claude/scripts/team-boot.sh
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

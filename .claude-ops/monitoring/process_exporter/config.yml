@@ -1,0 +1,26 @@
+process_names:
+
+  # ──────────────────────────────────────────────────────────────
+  # GRUPO DINÂMICO — cria um grupo por valor de --agent
+  # Ex: --agent team-dev-backend  → grupo "team-dev-backend"
+  #     --agent team-orchestrator → grupo "team-orchestrator"
+  # Cobre todos os 27 agentes automaticamente sem listagem manual
+  # ──────────────────────────────────────────────────────────────
+  - name: "{{.Matches.agent}}"
+    cmdline:
+      - '--agent\s+(?P<agent>\S+)'
+
+  # ──────────────────────────────────────────────────────────────
+  # FALLBACK CLAUDE — processos claude sem flag --agent
+  # (casos edge: claude em modo interativo, scripts, etc.)
+  # ──────────────────────────────────────────────────────────────
+  - name: "claude-untagged"
+    cmdline:
+      - '.*bin/claude.*'
+
+  # ──────────────────────────────────────────────────────────────
+  # SISTEMA — todos os outros processos do SO
+  # ──────────────────────────────────────────────────────────────
+  - name: "system"
+    cmdline:
+      - '.+'

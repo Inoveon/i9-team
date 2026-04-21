@@ -1,0 +1,22 @@
+{
+  "version": "1",
+  "projects": [
+    {
+      "name": "meu-projeto",
+      "root": "/Users/exemplo/projects/meu-projeto",
+      "teams": [
+        {
+          "name": "dev",
+          "orchestrator": "team-orchestrator",
+          "agents": [
+            { "name": "team-orchestrator", "dir": "." },
+            { "name": "team-dev-backend",  "dir": "backend" },
+            { "name": "team-dev-frontend", "dir": "frontend" },
+            { "name": "team-dev-mobile",   "dir": "mobile" },
+            { "name": "team-dev-service",  "dir": "." }
+          ]
+        }
+      ]
+    }
+  ]
+}

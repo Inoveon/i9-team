@@ -1,0 +1,11 @@
+[Unit]
+Description=Executa claude-metrics.service a cada 30 segundos
+Requires=claude-metrics.service
+
+[Timer]
+OnBootSec=10s
+OnUnitActiveSec=30s
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

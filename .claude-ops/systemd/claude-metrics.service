@@ -1,0 +1,10 @@
+[Unit]
+Description=Claude Agent Metrics Generator (textfile collector)
+After=network.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+ExecStart=/usr/bin/python3 /home/ubuntu/monitoring/scripts/claude-metrics.py
+StandardOutput=journal
+StandardError=journal
