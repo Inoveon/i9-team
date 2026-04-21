@@ -2,14 +2,34 @@
   "mcpServers": {
     "i9-team": {
       "command": "node",
-      "args": ["/Users/leechardes/mcp-servers/i9-team/dist/index.js"]
+      "args": ["/home/ubuntu/mcp-servers/i9-team/dist/index.js"]
     },
     "i9-agent-memory": {
       "command": "node",
-      "args": ["/Users/leechardes/mcp-servers/i9-agent-memory/dist/index.js"],
+      "args": ["/home/ubuntu/mcp-servers/i9-agent-memory/dist/index.js"],
       "env": {
-        "VAULT_NAME": "i9-smart-pdv",
-        "VAULT_PATH": "/Users/leechardes/Projetos/inoveon/producao/i9_smart_pdv_web/.memory"
+        "VAULT_NAME": "i9-team",
+        "VAULT_PATH": "/home/ubuntu/projects/i9-team/.memory",
+        "VAULT_IGNORE_PATTERNS": ".obsidian/**,.smart-env/**,*.canvas",
+        "DATABASE_URL": "postgresql://agent:agent123@localhost:5432/agent_memory",
+        "EMBEDDING_PROVIDER": "openai",
+        "OPENAI_API_KEY": "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",
+        "EMBEDDING_BASE_URL": "https://openrouter.ai/api/v1",
+        "EMBEDDING_MODEL": "text-embedding-3-small",
+        "EMBEDDING_DIMENSIONS": "1536"
+      }
+    },
+    "evolution-api": {
+      "command": "node",
+      "args": ["/home/ubuntu/mcp-servers/evolution-api/dist/index.js"],
+      "env": {
+        "EVOLUTION_API_URL": "https://evolution.inoveon.com.br",
+        "EVOLUTION_API_KEY": "bf696d6c2fb3a301e0b45d475c2e26efc4607726bdbc8f3687950c47f51ba9c4",
+        "EVOLUTION_DEFAULT_INSTANCE": "LEE_65992905301_CLARO",
+        "EVOLUTION_DEFAULT_DELAY": "1200",
+        "EVOLUTION_TIMEOUT": "30000",
+        "EVOLUTION_RETRY_ATTEMPTS": "3",
+        "EVOLUTION_RETRY_DELAY": "1000"
       }
     }
   }
