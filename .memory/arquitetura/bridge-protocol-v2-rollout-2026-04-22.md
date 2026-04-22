@@ -128,3 +128,32 @@ Auditoria completa rodada em `~/.claude/skills/`, `~/.claude/agents/`, `~/mcp-se
 ### Conclusão
 
 Bridge Protocol v2 **operacional** em produção nos dois lados testados. Rollout fechado com validação E2E completa.
+
+
+---
+
+## Varredura cross-team de MCP v2 — 2026-04-22
+
+Request `[BRIDGE]` enviada a todos os 6 orquestradores remotos pedindo listagem de tools `mcp__i9-team__*` e confirmação da remoção de `team_bridge_inbox`.
+
+### Resultado — 7/7 orquestradores com MCP v2 ✅
+
+| Projeto::Team | Orquestrador | Status MCP | `team_bridge_inbox` | corr_id da response |
+|---------------|--------------|------------|---------------------|---------------------|
+| i9-team::dev | team-orchestrator | v2 (local) | ausente | — |
+| i9-smart-pdv::dev | team-orchestrator | v2 | ausente | `d965e648...` |
+| proxmox-infrastructure::infra | team-orchestrator | v2 | ausente | `df45c28d...` |
+| mcp-servers::dev | team-orchestrator | v2 | ausente | `034dfd8e...` |
+| i9-service::dev | team-orchestrator | v2 | ausente | `2b659f25...` (reenvio) |
+| i9-issues::dev | team-orchestrator | v2 | ausente | `5ddc294e...` (reenvio) |
+| i9-issues::ops | team-ops-orchestrator | v2 | ausente | `dea32c54...` |
+
+**11 tools `mcp__i9-team__*` reportadas por todos**: `team_bridge_check`, `team_bridge_discover`, `team_bridge_send`, `team_check`, `team_detect_menu`, `team_list_agents`, `team_note_list`, `team_note_read`, `team_note_write`, `team_select_option`, `team_send`.
+
+### Observação técnica
+
+Duas sessões (`i9-service::dev`, `i9-issues::dev`) **ignoraram a primeira request** enquanto estavam logo após ativar `/remote-control`. O reenvio bridge pegou — sugere race condition entre a ativação do Remote Control e o processamento de inputs tmux. Não é regra universal (4 outras sessões também estavam com Remote Control ativo e processaram de primeira). Fica registrado como risco residual — o fallback é sempre reenviar.
+
+### Conclusão
+
+Bridge Protocol v2 **totalmente propagado na frota**. Todos os 7 orquestradores operam sobre o mesmo contrato (3 tools bridge), nenhum sobra com a tool legada. Rollout encerrado com validação completa.
