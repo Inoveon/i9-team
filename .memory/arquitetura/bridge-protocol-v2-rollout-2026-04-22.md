@@ -235,3 +235,51 @@ Feature TEF CliSiTef preservada. Commits presentes na cadeia:
 | i9-service::dev | ✅ raiz limpa (submódulos em feature branches WIP — esperado) |
 | proxmox-infrastructure::infra | ✅ limpo |
 | i9-smart-pdv::dev | ✅ limpo (inclusive submódulos) |
+
+
+---
+
+## Update — i9-service ZERADO (raiz + submódulos em main)
+
+Com autorização explícita do usuário ("jogar tudo pra main, deixar 100% zerado"), o orquestrador `i9-service::dev` delegou aos devs e fechou o ciclo completo de feature branches.
+
+### Superproject (`/home/ubuntu/projects/i9-service`)
+- Commits novos: `f6b9267` (bridge v2 orquestrador) + `6b4c790` (bump dos submódulos pra main)
+- `## main...origin/main` limpo
+
+### Submódulo backend
+- Feature branch: `feat/issues-1-6` (3 commits: env, auth forgot/reset + JWT, CRUDs multi-tenant + AI + dashboards)
+- Merge `--no-ff` → `5de258c`
+- Branch deletada (local + remota)
+- Main sync com origin
+
+### Submódulo web
+- Feature branch: `feat/issues-1-6` (5 commits: deps, auth protected routes, layout+sidebar, listagens CRM, admin dashboards+técnicos)
+- Merge `--no-ff` → `bcc8257`
+- Branch deletada (local + remota)
+- Main sync com origin
+
+### Submódulo mobile
+- Feature branch: `feat/issues-1-7` (4 commits: permissões+deps, auth centralizado, tab Perfil, service-orders timeline+geo)
+- Merge `--no-ff` → `3860f14`
+- Branch deletada (local + remota)
+- Main sync com origin
+
+### Validação final
+- 0 conflitos (merges limpos via ort strategy)
+- `git status` raiz + todos os 3 submódulos: `## main...origin/main` sem pendências
+- Nenhuma feature branch residual (nem local nem remota)
+
+### Status FINAL absoluto da frota pós-sessão
+
+| Projeto::Team | Estado |
+|---|---|
+| i9-team::dev | ✅ limpo |
+| mcp-servers::dev | ✅ limpo |
+| i9-issues::dev | ✅ limpo |
+| i9-issues::ops | ✅ limpo |
+| **i9-service::dev** | ✅ **TOTALMENTE LIMPO** (raiz + 3 submódulos, features mergeadas+deletadas) |
+| proxmox-infrastructure::infra | ✅ limpo |
+| i9-smart-pdv::dev | ✅ limpo (inclusive submódulos) |
+
+**Frota 100% zerada. Rollout + sync + cleanup de feature branches concluídos.**
