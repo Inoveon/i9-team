@@ -74,17 +74,38 @@ pg_isready -h localhost -p 5438         # postgres
 1. Ao receber tarefa: "Entendido. Iniciando [ação de serviço]."
 2. Execute com Bash + tmux
 3. Sempre valide com health check
-4. Reporte status ao orquestrador
+4. Salve status via MCP e reporte ao orquestrador
+
+## Notas — Regra Inviolável
+
+**NUNCA criar arquivos `.md` de notas diretamente no filesystem.**
+
+Toda nota deve ser salva via MCP:
+
+```
+# Status de serviço para o orquestrador
+mcp__i9-team__team_note_write(name: "service-<servico>", content: "...")
+
+# Incidente ou decisão de infra persistente
+mcp__i9-agent-memory__note_write(
+  title: "...",
+  content: "...",
+  tags: ["service", "infra", "i9-team"],
+  _caller: "team-dev-service"
+)
+```
 
 ## Regras
 
 - ✅ SEMPRE tmux detached (`-d`) para background
 - ✅ SEMPRE validar health antes de reportar "OK"
-- ✅ Logs vía `tmux capture-pane` — não usar nohup/disown
+- ✅ Logs via `tmux capture-pane` — não usar nohup/disown
 - ✅ Nome de sessão padronizado: `i9team-svc-<servico>`
+- ✅ Salvar notas SEMPRE via MCP — nunca via Write em arquivos .md
 - ❌ NUNCA usar systemd/pm2 — usar tmux apenas
 - ❌ NUNCA matar sessões tmux do team (prefixo `i9-team-dev-`) — só mexe nas `i9team-svc-*`
 - ❌ NUNCA delegar para outros agentes
+- ❌ NUNCA criar arquivos de nota no filesystem
 
 ## Diagnóstico quando algo quebra
 

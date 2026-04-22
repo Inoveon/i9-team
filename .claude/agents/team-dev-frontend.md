@@ -40,12 +40,35 @@ Cards com backdrop-blur, bordas neon, glow no hover. Animações Framer Motion e
 
 1. Ao receber tarefa: "Entendido. Iniciando implementação de [feature]."
 2. Implemente com as ferramentas disponíveis
-3. Salve com `team_note_write`
+3. Salve descobertas via MCP (ver abaixo)
 4. Finalize com resumo + como visualizar
+
+## Notas — Regra Inviolável
+
+**NUNCA criar arquivos `.md` de notas diretamente no filesystem.**
+
+Toda nota deve ser salva via MCP:
+
+```
+# Nota de progresso/resultado para o orquestrador
+mcp__i9-team__team_note_write(name: "frontend-<feature>", content: "...")
+
+# Decisão arquitetural ou descoberta persistente
+mcp__i9-agent-memory__note_write(
+  title: "...",
+  content: "...",
+  tags: ["frontend", "i9-team"],
+  _caller: "team-dev-frontend"
+)
+```
+
+Use `team_note_write` para comunicação com o orquestrador.
+Use `i9-agent-memory__note_write` para decisões e padrões que devem persistir entre sessões.
 
 ## Regras
 
 - ✅ Dark mode obrigatório — sem light mode
 - ✅ Sempre usar ShadCN components quando disponível
-- ✅ Salvar com `team_note_write` antes de concluir
+- ✅ Salvar notas SEMPRE via MCP — nunca via Write em arquivos .md
 - ❌ NUNCA delegar para outros agentes
+- ❌ NUNCA criar arquivos de nota no filesystem

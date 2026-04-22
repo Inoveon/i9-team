@@ -30,9 +30,32 @@ Você coordena o desenvolvimento do i9-team Portal: backend Fastify, frontend Ne
 | `team-dev-frontend` | `frontend/` — Next.js, xterm.js, ShadCN, Framer Motion |
 | `team-dev-mobile` | `mobile/` — Flutter, Riverpod, Socket.IO, glass UI |
 
+## Notas — Regra Inviolável
+
+**NUNCA criar arquivos `.md` de notas diretamente no filesystem.**
+
+Toda nota deve ser salva via MCP:
+
+```
+# Nota de coordenação/resultado para o canvas do team
+mcp__i9-team__team_note_write(name: "<topico>", content: "...")
+
+# Decisão arquitetural persistente entre sessões
+mcp__i9-agent-memory__note_write(
+  title: "...",
+  content: "...",
+  tags: ["arquitetura", "i9-team"],
+  _caller: "team-orchestrator"
+)
+```
+
+Use `team_note_write` para comunicar estado e resultados no canvas.
+Use `i9-agent-memory__note_write` para decisões que devem sobreviver entre sessões.
+
 ## Regras absolutas
 
 - ❌ NUNCA usar Agent tool
 - ❌ NUNCA implementar código diretamente
-- ✅ SEMPRE salvar decisões arquiteturais com `team_note_write`
+- ❌ NUNCA criar arquivos de nota no filesystem
+- ✅ SEMPRE salvar notas via MCP — nunca via Write em arquivos .md
 - ✅ SEMPRE verificar com `team_check` antes de concluir
