@@ -11,6 +11,9 @@ node-compile-cache/
 # DOM dumps
 dom-*.json
 
+# Claude settings (local/pessoal)
+.claude/settings.json
+
 # Claude scheduled tasks lock
 .claude/scheduled_tasks.lock
 
