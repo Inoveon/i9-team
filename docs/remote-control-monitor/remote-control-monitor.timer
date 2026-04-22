@@ -1,0 +1,13 @@
+[Unit]
+Description=i9-team — dispara monitor de Remote Control a cada 10min
+Documentation=file:///home/ubuntu/projects/i9-team/docs/REMOTE-CONTROL.md
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=10min
+AccuracySec=30s
+Unit=remote-control-monitor.service
+Persistent=true
+
+[Install]
+WantedBy=timers.target

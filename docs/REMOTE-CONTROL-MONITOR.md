@@ -171,6 +171,27 @@ Hardcoded no script (pra mudar, edita diretamente):
 
 ---
 
+## Formato do alerta WhatsApp
+
+Só dispara **quando houve ação** de connect/reconnect (nunca spamma com ACTIVE).
+
+```
+✅/❌ Remote Control — ação executada
+
+🌎 Ambiente: <CLAUDE_ENV_PREFIX> (<hostname>)
+📍 <project> / <team>
+🧭 <agent>
+⚠️ Estado anterior: <DISCONNECTED|STUCK_CONNECTING>
+📌 Resultado: <ACTIVE|UNKNOWN>
+🔗 https://claude.ai/code/session_<id>
+🏷️ <rc_name>
+⏰ <timestamp>
+```
+
+A linha `🌎 Ambiente` é essencial quando você roda o monitor em **múltiplos ambientes** (servidor + máquina local, por exemplo). Sem ela, os alertas ficam ambíguos — você não sabe de qual máquina vem cada reconexão. O campo mostra o `CLAUDE_ENV_PREFIX` e o hostname da máquina entre parênteses; se o prefixo estiver vazio, aparece `<sem prefixo>`.
+
+---
+
 ## Múltiplos ambientes — padrão de prefixo
 
 ### Problema

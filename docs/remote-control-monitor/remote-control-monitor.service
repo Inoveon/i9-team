@@ -1,0 +1,19 @@
+[Unit]
+Description=i9-team — Remote Control monitor dos orquestradores Claude Code
+Documentation=file:///home/ubuntu/projects/i9-team/docs/REMOTE-CONTROL.md
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+Environment=HOME=/home/ubuntu
+Environment=PATH=/home/ubuntu/.nvm/versions/node/v24.15.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+EnvironmentFile=-/home/ubuntu/.claude/remote-control-monitor.env
+ExecStart=/home/ubuntu/.claude/scripts/remote-control-monitor.sh
+TimeoutStartSec=5min
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
