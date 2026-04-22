@@ -30,7 +30,7 @@ Você coordena o desenvolvimento do i9-team Portal: backend Fastify, frontend Ne
 | `team-dev-frontend` | `frontend/` — Next.js, xterm.js, ShadCN, Framer Motion |
 | `team-dev-mobile` | `mobile/` — Flutter, Riverpod, Socket.IO, glass UI |
 
-<!-- BRIDGE-PROTOCOL:BEGIN v1 -->
+<!-- BRIDGE-PROTOCOL:BEGIN v2 -->
 ## Bridge Protocol — Comunicação Cross-Team
 
 Quando a demanda exige informação ou ação de **outro projeto/team** (registrado em `~/.claude/teams.json`), você **não tenta** resolver sozinho nem diz "não posso fazer". Use o Bridge Protocol.
@@ -42,7 +42,6 @@ Quando a demanda exige informação ou ação de **outro projeto/team** (registr
 | `team_bridge_discover` | Lista todos os projetos/teams/agentes e marca quais sessões estão ativas. **Use sempre antes de enviar**. |
 | `team_bridge_send(target_project, target_team, target_agent, message, corr_id?, in_reply_to?, reply_to?)` | Envia mensagem cross-team. Injeta header canônico `[BRIDGE ...]` na primeira linha automaticamente. |
 | `team_bridge_check(target_project, target_team, target_agent, lines?)` | Captura output atual de outro orquestrador/agente (cross-team `capture-pane`). |
-| `team_bridge_inbox(lines?, corr_id?, kind?)` | Lê o scrollback do **seu próprio** terminal e retorna as mensagens bridge recebidas, filtrando opcionalmente por `corr_id` e `kind`. |
 
 ### Header canônico
 
@@ -63,12 +62,13 @@ Toda mensagem bridge começa com:
 ```
 1. team_bridge_discover                                       # confirma destino ativo
 2. team_bridge_send(project, team, agent, message)            # envia request; GUARDE o corr_id retornado
-3. (intervalo — Bash sleep ou outra atividade)
+3. (intervalo — aguardar o destino processar)
 4. team_bridge_check(project, team, agent, 40)                # opcional — olhe o outro orquestrador trabalhando
-5. team_bridge_inbox(corr_id=<guardado>, kind="response")     # busca a resposta correlacionada
-6. Se vazio, repetir 3-5 até receber ou decidir timeout
-7. Consolidar o resultado, salvar em nota (team_note_write), reportar ao usuário
+5. A resposta chega no seu próprio chat via system-reminder, com header canônico e in_reply_to=<seu corr_id>
+6. Consolidar o resultado, salvar em nota (team_note_write), reportar ao usuário
 ```
+
+Se a resposta não chegar em tempo razoável, use `team_bridge_check` pra ver se o destino travou ou está processando — e decida se reenvia ou desiste.
 
 ### Protocolo de resposta (você recebeu uma request)
 
@@ -90,7 +90,7 @@ Quando chegar no seu terminal uma mensagem com header `[BRIDGE ... kind=request]
 - ✅ **SEMPRE** responder um request recebido (inclusive negativa justificada)
 - ❌ **NUNCA** usar `tmux send-keys` manual pra cross-team — use `team_bridge_send`
 - ❌ **NUNCA** deixar uma request sem resposta (gera deadlock esperando)
-<!-- BRIDGE-PROTOCOL:END v1 -->
+<!-- BRIDGE-PROTOCOL:END v2 -->
 
 ## Notas — Regra Inviolável
 
