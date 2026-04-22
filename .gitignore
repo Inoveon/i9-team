@@ -19,3 +19,7 @@ dom-*.json
 .env.*
 !.env.example
 .mcp.json
+
+# Memory vault DB
+.memory/.agent-memory.db*
+.memory/.obsidian/

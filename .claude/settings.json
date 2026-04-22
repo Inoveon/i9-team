@@ -1,23 +1,30 @@
 {
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "defaultMode": "acceptEdits",
   "permissions": {
     "allow": [
-      "mcp__i9-team__team_list_agents",
-      "mcp__i9-team__team_send",
-      "mcp__i9-team__team_check",
-      "mcp__i9-team__team_note_read",
-      "mcp__i9-team__team_note_write",
-      "mcp__i9-team__team_note_list",
-      "mcp__i9-team__team_detect_menu",
-      "mcp__i9-team__team_select_option",
-      "mcp__i9-agent-memory__search",
-      "mcp__i9-agent-memory__note_write",
-      "mcp__i9-agent-memory__note_read",
-      "Bash(git *)",
-      "Bash(npm *)",
-      "Bash(npx *)",
-      "Bash(flutter *)",
-      "Bash(make *)",
-      "Bash(tmux *)"
+      "Bash",
+      "Edit",
+      "Read",
+      "Write",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "WebSearch",
+      "mcp__i9-team__*",
+      "mcp__i9-agent-memory__*",
+      "mcp__evolution-api__*",
+      "mcp__db-manager__*",
+      "mcp__plugin_context-mode_context-mode__*",
+      "mcp__plugin_telegram_telegram__*"
+    ],
+    "ask": [
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(rm -rf*)",
+      "Bash(docker system prune*)"
     ]
   }
 }
