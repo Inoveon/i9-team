@@ -195,3 +195,43 @@ Dois orquestradores travaram em prompts modais do Claude Code (confirmação de 
 ### Conclusão
 
 Frota **100% sincronizada no escopo esperado**. Todos os orquestradores com Bridge Protocol v2 propagado, commitado e pushado pro respectivo origin. Backlog arquitetural aberto: `team_bridge_key`.
+
+
+---
+
+## Update — ponteiro órfão do backend do i9-smart-pdv RESOLVIDO
+
+Após o report inicial de `SYNC-OK com ressalva`, o orquestrador `i9-smart-pdv::dev` recebeu aprovação do usuário e resolveu a inconsistência:
+
+### Diagnóstico
+O commit `5d72676` (21/04 23:42) havia fixado o ponteiro em `backend@422ee55`, mas `422ee55` **não existia em nenhum ref do origin** do backend — foi amend-ado/rebaseado e virou `b8c86a0`, que tem a mesma mensagem de commit (`feat(pdv): adicionar configuração de formas de pagamento por empresa`).
+
+### Correção aplicada
+1. `cd backend && git checkout b8c86a0` (commit válido no origin com a mesma feature)
+2. `git add backend && git commit` criando `360204c` — `fix(refs): corrigir ponteiro backend 422ee55→b8c86a0 (commit órfão)`
+3. `git push origin main` → `15c2b7e..360204c` ✅
+
+### Estado final do i9-smart-pdv
+```
+## main...origin/main                       ← raiz 100% sync
+backend → b8c86a0 (backend-v1.90.1-10-gb8c86a0)
+```
+
+Feature TEF CliSiTef preservada. Commits presentes na cadeia:
+- `b8c86a0`: feat(pdv): formas de pagamento por empresa
+- `e477b99`: feat(tef): integração completa CliSiTef
+- `393bdaf`: feat(tef): endpoint tef-confirmar
+
+**Workdir totalmente limpo. SYNC-OK definitivo.**
+
+### Status final absoluto da frota
+
+| Projeto::Team | Estado |
+|---|---|
+| i9-team::dev | ✅ limpo |
+| mcp-servers::dev | ✅ limpo |
+| i9-issues::dev | ✅ limpo |
+| i9-issues::ops | ✅ limpo |
+| i9-service::dev | ✅ raiz limpa (submódulos em feature branches WIP — esperado) |
+| proxmox-infrastructure::infra | ✅ limpo |
+| i9-smart-pdv::dev | ✅ limpo (inclusive submódulos) |
