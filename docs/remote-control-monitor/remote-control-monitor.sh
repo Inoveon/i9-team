@@ -66,6 +66,40 @@ send_whatsapp() {
   fi
 }
 
+# Detecta se o menu do /remote-control está aberto (3 opções visíveis).
+# Esse menu aparece quando o usuário ou automação chama /remote-control
+# numa sessão JÁ conectada. Enquanto estiver aberto, o agente Claude
+# PARA de responder — qualquer input vira navegação no menu.
+# Retorna 0 se o menu está aberto, 1 caso contrário.
+is_remote_menu_open() {
+  local session="$1"
+  local pane
+  pane=$(tmux capture-pane -t "$session" -p -S -30 2>/dev/null)
+  # Heurística robusta: o menu sempre tem as 3 opções juntas.
+  # Exige os 3 marcadores pra evitar falsos positivos (ex: histórico de conversa).
+  if echo "$pane" | grep -q "Disconnect this session" && \
+     echo "$pane" | grep -q "Show QR code" && \
+     echo "$pane" | grep -qE "Enter to (confirm|select)"; then
+    return 0
+  fi
+  return 1
+}
+
+# Fecha o menu /remote-control clicando em "Continue" (opção default já
+# selecionada ao abrir o menu). Mantém o Remote Control conectado
+# — só sai da tela do menu pra o agente voltar a responder.
+close_remote_menu() {
+  local session="$1"
+  # Enter seleciona o item que já está highlighted (Continue = default)
+  tmux send-keys -t "$session" Enter
+  sleep 2
+  # Fallback defensivo: se por algum motivo Enter não fechou, Escape fecha.
+  if is_remote_menu_open "$session"; then
+    tmux send-keys -t "$session" Escape
+    sleep 1
+  fi
+}
+
 # Classifica estado do Remote Control numa sessão tmux
 # Saída: ACTIVE | STUCK_CONNECTING | DISCONNECTED | NO_SESSION
 classify_state() {
@@ -134,6 +168,13 @@ process_orchestrator() {
   local agent="$3"
   local session="$4"
   local rc_name="$5"
+
+  # Antes de classificar, verifica se o menu /remote-control ficou aberto
+  # (situação em que o agente fica travado sem responder até fechar).
+  if tmux has-session -t "$session" 2>/dev/null && is_remote_menu_open "$session"; then
+    log "[$project/$team] menu /remote-control aberto — fechando com Continue (Enter)"
+    close_remote_menu "$session"
+  fi
 
   local state
   state=$(classify_state "$session")
