@@ -2,8 +2,8 @@
 
 > Documento **vivo**. Cada descoberta, decisão ou mudança entra no **Changelog** no fim e atualiza a seção relevante. Não reescrever — acrescentar.
 
-**Status atual**: Fase 0 — Discovery (Gemini ✅ funcional; Codex ⚠️ MCP conecta mas detecção de contexto falha)
-**Versão do doc**: 0.3
+**Status atual**: Fase 0 ✅ concluída — Gemini + Codex funcionais com identidade via env vars. 2 agentes cobaia no ar (`team-gemini`, `team-codex`).
+**Versão do doc**: 0.4
 **Última atualização**: 2026-04-23
 
 ---
@@ -452,3 +452,80 @@ tmp/                   # dir temporário
 - Skill `/auth-cli` tem os 3 fluxos mapeados agora — design pode ser finalizado
 
 **Próximo passo**: atualizar a tabela de compatibilidade no topo do doc (seção "Compatibilidade") e projetar a skill `/auth-cli` com os 3 fluxos documentados.
+
+### 2026-04-23 — v0.4 — Fase 0 CONCLUÍDA: identidade via env vars + 2 agentes cobaia no ar
+
+**Item técnico #2 implementado e validado**
+
+MCP `i9-team` atualizada com nova função `resolveCurrentContext()` que prioriza:
+1. **Env vars explícitas injetadas pelo cliente**: `MCP_PROJECT`, `MCP_TEAM`, `MCP_AGENT_NAME`, `MCP_CLIENT_ID`
+2. Fallback pra `getCurrentSession()` (legado tmux)
+
+Arquivos alterados:
+- `mcp-servers/i9-team/src/config.ts`: nova `resolveCurrentContext()`, tipo `ClientType`, campo `client?` em `AgentConfig`
+- `mcp-servers/i9-team/src/tools/{send-agent,list-agents,check-agent,bridge-send,select-option,notes}.ts`: 6 tools migradas pra usar `resolveCurrentContext()` em vez de `getCurrentSession + resolveContext`
+- Build OK. 7 orquestradores Claude rodando continuam com versão anterior em memória (não afetados).
+
+**Teste funcional decisivo** — `env -i` com HOME+PATH mínimo + MCP_* vars:
+```bash
+env -i HOME=/home/ubuntu PATH=/home/ubuntu/.nvm/versions/node/v24.15.0/bin:/usr/bin:/bin \
+  MCP_PROJECT=i9-team MCP_TEAM=dev MCP_AGENT_NAME=team-gemini MCP_CLIENT_ID=gemini \
+  gemini --yolo -p "Invoke mcp__i9-team__team_list_agents"
+```
+
+Retornou lista real dos 5 agentes do team (sem tmux, sem herança, só via env MCP_*). ✅ Item #2 fechado.
+
+**teams.json — campo `client` oficializado**
+
+2 agentes novos adicionados em `i9-team/dev`:
+```json
+{"name": "team-gemini", "dir": ".", "client": "gemini-cli"},
+{"name": "team-codex",  "dir": ".", "client": "codex-cli"}
+```
+
+Schema de `AgentConfig.client` (opcional, default `claude-code`):
+- `claude-code` — default se omitido, mantém retrocompatibilidade
+- `gemini-cli` — lança `gemini --yolo`
+- `codex-cli` — lança `codex --yolo -c mcp_servers.*.env.MCP_*`
+
+**Script `team-agent-boot.sh` criado**
+
+`~/.claude/scripts/team-agent-boot.sh <project> <team> <agent>`:
+- Lê `teams.json`, descobre campo `client` do agente
+- Cria sessão tmux com env vars `I9_*` (legado) + `MCP_*` (novo)
+- Seleciona o CLI correto pelo `client`
+- Pra Codex, injeta flags `-c mcp_servers.i9-team.env.MCP_*=...` porque sandbox isola env
+
+**Validação E2E dos 2 agentes cobaia**
+
+Ambas as sessões subidas e funcionais:
+
+| Agente | CLI | Modelo | Identidade (`$MCP_AGENT_NAME`) | Tool MCP |
+|---|---|---|---|---|
+| `team-gemini` | Gemini CLI 0.39.0 | Gemini 3 Auto | ✅ `team-gemini` | ✅ `team_list_agents` retornou 7 agentes |
+| `team-codex` | Codex CLI 0.123.0 | gpt-5.4 | ✅ `team-codex` | ✅ `team_list_agents` retornou 7 agentes |
+
+**Descobertas adicionais da sessão**
+
+- **Codex `--yolo` é do modo interativo** (não `--dangerously-bypass-approvals-and-sandbox` que é só do subcomando `exec`). Script corrigido pra refletir.
+- **Codex pede "Trust directory" na primeira execução por CWD** (similar ao Gemini) — automação requer aceitar esse prompt
+- **Herança de env via `tmux new-session -e KEY=VALUE`** funciona pro Gemini (que depois herda naturalmente); pro Codex a sandbox isola → obrigatório injetar via `-c mcp_servers.*.env.*`
+- **Config `mcp_servers.<name>.env.*`** é o ponto canônico pra injetar identidade no Codex (via flag `-c` no launch ou no `~/.codex/config.toml`)
+
+**Tabela de compatibilidade atualizada — final da Fase 0**
+
+| Cliente | Auth | MCP config | MCP list | Invoke tool via env MCP_* | Campo `client` no boot |
+|---|---|---|---|---|---|
+| Claude Code | ✅ | ✅ | ✅ | ✅ (nativo + env fallback) | `claude-code` (default) |
+| Gemini CLI | ✅ OAuth Google | ✅ | ❌ Q1 | ✅ (herda env) | `gemini-cli` → `gemini --yolo` |
+| Codex CLI | ✅ OAuth ChatGPT | ✅ | ✅ | ✅ (via `-c mcp_servers.*.env.*`) | `codex-cli` → `codex --yolo -c ...` |
+
+**Critério de saída da Fase 0** (✅ **alcançado**):
+> "Consigo invocar pelo menos 3 tools da MCP i9-team a partir do Gemini CLI e do Codex CLI sem erro."
+
+**Pendente ainda** (backlog incremental, não bloqueia Fase 1):
+- Skill `/team-auth-cli` unificando auth dos 3 CLIs
+- Integração do `client` no `team.sh`/`team-boot.sh` oficial (hoje usando o `team-agent-boot.sh` paralelo)
+- POC da Fase 1: agente cobaia fazendo trabalho real e medição de ROI
+
+**Próximo passo natural**: Fase 1 pode começar — team-gemini e team-codex podem receber tarefas reais do orquestrador via `team_send`.
