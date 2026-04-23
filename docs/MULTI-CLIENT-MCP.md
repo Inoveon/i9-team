@@ -2,8 +2,8 @@
 
 > Documento **vivo**. Cada descoberta, decisão ou mudança entra no **Changelog** no fim e atualiza a seção relevante. Não reescrever — acrescentar.
 
-**Status atual**: Fase 1 concluída — i9-tools v0.2, skill /team-auth-cli, migração de 8 agentes (3 projetos) pro multi-cliente, princípio #8 registrado.
-**Versão do doc**: 0.5
+**Status atual**: Fase 3 concluída — team.sh oficial respeita campo `client` + validação ROI end-to-end bem-sucedida.
+**Versão do doc**: 0.6
 **Última atualização**: 2026-04-23
 
 ---
@@ -575,3 +575,52 @@ Agentes cobaia (`team-claude`, `team-gemini`, `team-codex`) ficam **só no i9-te
 - Validar ROI dos agentes migrados com tarefas reais (Fase 3)
 - Adicionar mais tools no i9-tools (upload S3, Remotion video, outros)
 - Integrar `team.sh` oficial com campo `client` (hoje usa `team-agent-boot.sh` paralelo)
+
+### 2026-04-23 — v0.6 — Fase 3: team.sh oficial + Validação ROI end-to-end
+
+**team.sh integrado com multi-client**
+
+O workflow oficial (`~/.claude/scripts/team.sh`) agora respeita o campo `client` de `teams.json`. Hardcoded pra Claude → escolha dinâmica.
+
+- 3 binários em vez de 1 (CLAUDE_BIN / GEMINI_BIN / CODEX_BIN)
+- Injeta env MCP_* no `tmux new-session`
+- Lança CLI apropriado por agente (com flags Codex quando necessário)
+- `/team-protocol` e `/remote-control` aplicados só pra `claude-code`
+- `team.sh list` mostra `[client]` ao lado de cada agente
+
+Validado com `team.sh start i9-service dev` — 5 sessões subiram corretamente (2 Claude + 3 Gemini) sem ação manual.
+
+Cópias de backup preservadas em `~/.claude/scripts/team.sh.bak.*` e arquivadas no repo em `docs/multi-client-assets/`.
+
+**Validação ROI end-to-end** via bridge
+
+Tarefa idêntica delegada aos 4 agentes do i9-service/dev em paralelo:
+> "Leia primeiro .md do projeto. Responda 2 linhas PT-BR: (1) o que é, (2) stack."
+
+| Agente | CLI | Nota | Observação |
+|---|---|---|---|
+| team-dev-backend | Gemini | 5/5 | Stack completo em 4 reads |
+| team-dev-web | Gemini | 5/5 | Mais conciso (1 folder + 2 reads) |
+| team-dev-mobile | Gemini | 4/5 | Omitiu PG e Redis |
+| team-dev-service | Claude | 5/5 | Versões PG15/Redis7 + Docker + submódulos |
+
+Todos concluíram em <50s. Formato respeitado. **Veredito**: ROI-VALIDADO.
+
+Gemini entrega qualidade ≈ Claude em tarefas de leitura/resumo simples, com latência comparável. Claude mantém vantagem em completude e profundidade técnica — confirma princípio #1 (Claude pra análise arquitetural).
+
+**Distribuição final da frota (29 agentes)**
+
+- Claude: 19 (todos orquestradores + analistas + infra + smart-pdv + i9-service/service + i9-issues/ops + cobaia claude)
+- Gemini: 7 (i9-service BE/Web/Mobile + i9-issues BE/FE/Svc + cobaia gemini)
+- Codex: 3 (mcp-servers dev-mcp + dev-service + cobaia codex)
+
+**Commits desta fase**:
+- `3cbd958` — team.sh integrado + arquivamento no repo
+
+**Próximos passos (Fase 4)**
+
+- Tarefas complexas reais pros Gemini (refactor multi-arquivo no i9-service)
+- Dashboard de custos (tokens/CLI/agente/dia)
+- i9-tools: upload S3/R2, Remotion
+- CI de compatibilidade das tools em cada cliente
+- Propagação incremental pro i9-smart-pdv quando houver confiança

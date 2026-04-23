@@ -105,3 +105,61 @@ Atualizarei esta nota quando a resposta chegar.
         ▼ (se claude-code)
 /team-protocol + /remote-control aplicados
 ```
+
+
+---
+
+## Validação ROI — RESULTADO
+
+**Veredito**: ✅ **ROI-VALIDADO**
+
+**Orquestrador i9-service::dev** coordenou a validação e respondeu via bridge (`corr_id f7405a54...`).
+
+### Setup do teste
+
+Tarefa idêntica delegada aos 4 agentes do i9-service/dev em paralelo via `team_send`:
+> "Leia o primeiro arquivo .md do projeto (README preferencialmente). Responda em PT-BR com EXATAMENTE 2 linhas: (1) o que é o projeto, (2) principal tech stack."
+
+### Resultados
+
+| Agente | CLI | 2 linhas | Precisão técnica | Tool calls |
+|---|---|---|---|---|
+| team-dev-backend | Gemini | ✅ | ✅ NestJS+TypeORM+Postgres+React+Tailwind+Expo | 4 reads |
+| team-dev-web | Gemini | ✅ | ✅ Completo (stack inteiro) | 1 folder + 2 reads (mais conciso) |
+| team-dev-mobile | Gemini | ✅ | ⚠️ Omitiu PostgreSQL e Redis | 1 glob + 3 reads |
+| team-dev-service | Claude | ✅ | ✅✅ Mais completa: versões PG15, Redis7, Docker Compose, submódulos | 2 files + 2 dirs + 1 search |
+
+### Tempos
+
+- Todos os 4 completaram em <50s
+- Latência Gemini comparável a Claude pra essa classe de tarefa
+- Tool calls mínimas nos Gemini (2-4) vs 5 no Claude (mas com mais riqueza)
+
+### Análise
+
+**Pontos fortes dos Gemini (3/3)**:
+- Formato respeitado (2 linhas, marcadores)
+- Tecnicamente corretos
+- Mais ágeis em convergir resposta
+
+**Ponto de atenção**:
+- `team-dev-mobile` omitiu componentes de dados (PG, Redis) — gap de ~10% na completude
+- Esperado: Gemini é ágil mas pode pular detalhes que Claude capturaria
+
+**Ponto forte do Claude**:
+- Entregou versões específicas (PG15, Redis7), identificou Docker Compose e arquitetura de submódulos
+- Confirma princípio #1 — Claude pra análise arquitetural/profundidade
+
+### Conclusão
+
+> Migração dos 3 devs pra Gemini é **economicamente justificada** sem perda funcional relevante nessa classe de tarefa (leitura + resumo simples). Claude mantém vantagem em completude/profundidade — adequado pro service e orchestrator (que permanecem Claude).
+
+### Mensagem para o backlog
+
+- **Mobile agent em Gemini** pode se beneficiar de instrução explícita "liste TODOS os componentes do stack, incluindo dados e caches" no prompt-padrão — contorna o gap de completude observado
+- **Fase 4 (futura)**: delegar tarefas mais complexas aos Gemini pra ver se a qualidade degrada ou mantém
+
+### Fontes
+
+- Bridge response `f7405a54-7471-4400-92a8-75eba1e58e0e` → `in_reply_to=a511bfee-8288-4b2f-bd14-b47630b186b3`
+- Nota do próprio i9-service: `roi-validation-multiclient-2026-04-23`
