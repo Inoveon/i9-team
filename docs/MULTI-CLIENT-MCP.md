@@ -2,8 +2,8 @@
 
 > Documento **vivo**. Cada descoberta, decisão ou mudança entra no **Changelog** no fim e atualiza a seção relevante. Não reescrever — acrescentar.
 
-**Status atual**: Fase 0 ✅ concluída — Gemini + Codex funcionais com identidade via env vars. 2 agentes cobaia no ar (`team-gemini`, `team-codex`).
-**Versão do doc**: 0.4
+**Status atual**: Fase 1 concluída — i9-tools v0.2, skill /team-auth-cli, migração de 8 agentes (3 projetos) pro multi-cliente, princípio #8 registrado.
+**Versão do doc**: 0.5
 **Última atualização**: 2026-04-23
 
 ---
@@ -53,6 +53,7 @@ Estes não mudam sem revisão formal (ADR):
 5. **Identidade via env vars, não parent process** — quando o MCP precisa saber "quem me chamou", lê de `MCP_CLIENT_ID`, `MCP_AGENT_NAME`, etc. Injetar via config do cliente. Heurísticas (parent process, CWD) ficam só como fallback.
 6. **Bridge Protocol permanece Claude-to-Claude** — a borda cross-team é sempre entre orquestradores. Agentes Gemini/Codex não atravessam bridge.
 7. **Migração gradual** — 1 agente cobaia por vez. Medir ROI antes de escalar.
+8. **Agentes cobaia ficam só no i9-team/dev** — `team-claude`, `team-gemini`, `team-codex` existem exclusivamente no `i9-team/dev` como laboratório. Em outros projetos, multi-cliente é feito **trocando o campo `client` dos agentes existentes** — sem novos agentes. Rollback é trivial (remover o campo `client`).
 
 ### Consequências práticas do princípio #1
 
@@ -529,3 +530,48 @@ Ambas as sessões subidas e funcionais:
 - POC da Fase 1: agente cobaia fazendo trabalho real e medição de ROI
 
 **Próximo passo natural**: Fase 1 pode começar — team-gemini e team-codex podem receber tarefas reais do orquestrador via `team_send`.
+
+### 2026-04-23 — v0.5 — Fase 1: i9-tools, skill /team-auth-cli, migração 8 agentes
+
+**Rename team-media-studio → i9-tools v0.2**
+
+Git rename preservando histórico. Package rebrand (`i9-tools-mcp` v0.2.0). Tools prefixadas `i9_tools_*`. Novas tools: `i9_tools_diagram_mermaid` (Mermaid SVG/PNG), `i9_tools_deck` (Reveal.js), `i9_tools_web_fetch` (scraping com JS render), `i9_tools_web_screenshot`. **Total: 9 tools.** Commit mcp-servers: `3eb0fc6`.
+
+**Skill /team-auth-cli criada** (global, em `~/.claude/skills/`)
+
+Auth OAuth unificada pros 3 CLIs. Comandos: `status` (tabela), `claude|gemini|codex` (auth individual), `all` (faltantes), `reauth` (força), `revoke` (backup). Scripts implementados: `status.sh`, `auth-claude.sh`, `auth-gemini.sh`, `auth-codex.sh`, `revoke.sh`. OAuth sempre, nunca API keys.
+
+**Benchmark Browser (Fase 2)**
+
+Tarefa B1: fetch de `example.com` extraindo H1 + parágrafo via `i9_tools_web_fetch`.
+
+| Agente | Resultado | Tempo LLM | Tempo tool |
+|---|---|---|---|
+| team-claude | ✅ | ~10s | 1575ms |
+| team-gemini | ✅ | **6s** | 1586ms |
+| team-codex | ✅ | 16s | 1574ms |
+
+Insight chave: **quando MCP é padronizada, performance de browser é dominada pela tool, não pelo modelo**. Gemini orquestra tool calls com menos overhead.
+
+**Princípio #8 registrado**
+
+Agentes cobaia (`team-claude`, `team-gemini`, `team-codex`) ficam **só no i9-team/dev** como laboratório. Em outros projetos, multi-cliente é trocando o campo `client` dos agentes existentes.
+
+**Migração executada** (lazy — efetiva no próximo boot)
+
+| Projeto / Team | Mudanças | Agentes migrados |
+|---|---|---|
+| i9-service/dev | backend, web, mobile → gemini-cli | 3 |
+| i9-issues/dev | backend, frontend, service → gemini-cli | 3 |
+| mcp-servers/dev | dev-mcp, dev-service → codex-cli | 2 |
+| proxmox-infrastructure/infra | mantido claude | 0 |
+| i9-issues/ops | mantido claude (analistas) | 0 |
+| **i9-smart-pdv/dev** | **NÃO ALTERADO** (pedido do usuário) | 0 |
+
+**Total: 8 agentes migrados em 3 projetos.** 14 agentes mantidos em Claude (incluindo todos os orquestradores, toda a camada de análise e todo o i9-smart-pdv).
+
+**Próximos passos**
+
+- Validar ROI dos agentes migrados com tarefas reais (Fase 3)
+- Adicionar mais tools no i9-tools (upload S3, Remotion video, outros)
+- Integrar `team.sh` oficial com campo `client` (hoje usa `team-agent-boot.sh` paralelo)
