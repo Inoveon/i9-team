@@ -127,25 +127,11 @@ Se o destino é pasta compartilhada de Drive, pode usar Service Account em vez d
 
 ---
 
-## 4. 💬 Slack
+## 4. 💬 Chat corporativo — **Mattermost** (futuro)
 
-Tool: `i9_tools_slack_send`
+> Antes tinha seção Slack aqui. **Decisão 2026-04-23**: Inoveon vai usar Mattermost self-hosted no lugar. Issue rastreando: [i9-team#2](https://github.com/Inoveon/i9-team/issues/2). Tool `i9_tools_slack_send` existe no código mas está **desativada** (comentada no `index.ts`) — preservada como referência porque a API REST do Mattermost é ~80% compatível com Slack.
 
-### Variáveis
-
-```env
-SLACK_BOT_TOKEN=xoxb-...
-```
-
-### Como pegar
-
-1. https://api.slack.com/apps → Create New App → From scratch
-2. OAuth & Permissions → Scopes → Bot Token Scopes:
-   - `chat:write` (enviar mensagens)
-   - `chat:write.public` (em canais públicos sem invite)
-   - `channels:read` (listar canais)
-3. Install to Workspace → autoriza
-4. Copia **Bot User OAuth Token** (começa com `xoxb-`)
+Sem credenciais necessárias até o Mattermost entrar em produção.
 
 ---
 
@@ -173,8 +159,6 @@ GOOGLE_CLIENT_ID=....apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=GOCSPX-...
 GOOGLE_REFRESH_TOKEN=1//...
 
-# Slack
-SLACK_BOT_TOKEN=xoxb-...
 ```
 
 **Permissão obrigatória**: `chmod 600 ~/.i9-tools/.env`
@@ -186,7 +170,6 @@ SLACK_BOT_TOKEN=xoxb-...
 - [ ] Gemini: billing habilitado + key rotacionada em `~/.i9-tools/.env`
 - [ ] S3/R2: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `AWS_S3_BUCKET` no `.env` (+ `AWS_S3_ENDPOINT` se R2)
 - [ ] Google: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` no `.env` + APIs habilitadas
-- [ ] Slack: `SLACK_BOT_TOKEN` no `.env` (scopes configurados)
 
 Com tudo preenchido, **14 tools adicionais** ficam funcionais (ou 37 total). Posso fazer smoke test de cada integração quando ativar.
 
