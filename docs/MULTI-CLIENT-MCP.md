@@ -2,8 +2,8 @@
 
 > Documento **vivo**. Cada descoberta, decisão ou mudança entra no **Changelog** no fim e atualiza a seção relevante. Não reescrever — acrescentar.
 
-**Status atual**: Fase 0 — Discovery
-**Versão do doc**: 0.1
+**Status atual**: Fase 0 — Discovery (Gemini instalado e conectado; Codex pendente)
+**Versão do doc**: 0.2
 **Última atualização**: 2026-04-23
 
 ---
@@ -150,13 +150,15 @@ Essas APIs têm SDKs HTTP simples. MCP seria overhead desnecessário.
 
 **Entregas**:
 - [x] Documento de arquitetura criado (este)
-- [ ] Gemini CLI instalado no servidor
-- [ ] Config do Gemini apontando pra MCP i9-team via stdio
+- [x] Gemini CLI instalado no servidor (v0.39.0)
+- [x] Auth OAuth configurado (`selectedType: oauth-personal` em `~/.gemini/settings.json`)
+- [x] Config do Gemini apontando pras 3 MCPs via stdio (i9-team, i9-agent-memory, evolution-api)
 - [ ] Teste: `mcp__i9-team__team_list_agents` funcionando via Gemini
+- [ ] Codex CLI instalado + auth + MCPs configurados
 - [ ] Catálogo de quirks encontrados (append no Changelog)
-- [ ] Decisão: Codex entra na Fase 1 ou espera?
+- [ ] Decisão: ordem de entrada do Codex na Fase 1
 
-**Critério de saída**: consigo invocar pelo menos 3 tools da MCP i9-team a partir do Gemini CLI sem erro.
+**Critério de saída**: consigo invocar pelo menos 3 tools da MCP i9-team a partir do Gemini CLI e do Codex CLI sem erro.
 
 ### Fase 1 — POC com 1 agente cobaia
 
@@ -250,6 +252,7 @@ Lista do que provavelmente precisa ser feito. Cada item ganha status conforme as
 | R6 | Conflito de sessão tmux se 2 CLIs tentarem iniciar no mesmo pane | Média | Princípio 3 (1 CLI por pane); validar no `team-boot.sh` |
 | R7 | Env vars injetadas pelo config do cliente podem não chegar à MCP filha | Baixa | Testar em Fase 0; usar `Environment=` do systemd como backup |
 | R8 | Bridge Protocol pode falhar se orquestrador destino receber texto de CLI diferente | Baixa | Princípio 5 (bridge é Claude-to-Claude) já elimina |
+| R9 | `gemini mcp list` não retorna output (exit 0, stdout vazio) — dificulta inspeção de estado | Baixa | Inspeção direta via `jq '.mcpServers' ~/.gemini/settings.json`; reportar upstream |
 
 ---
 
@@ -257,16 +260,19 @@ Lista do que provavelmente precisa ser feito. Cada item ganha status conforme as
 
 ### Decisões pendentes
 
-- **D1**: Gemini primeiro ou Codex primeiro? (→ decidido na conversa: Gemini — MCP mais maduro, contexto maior, tier grátis generoso)
+- **D1**: Gemini primeiro ou Codex primeiro? (→ decidido: Gemini — MCP mais maduro, contexto maior, tier grátis generoso)
 - **D2**: Máquina alvo do POC: servidor ou máquina local do Lee? → Servidor primeiro (já tem teams em pé; menos setup)
 - **D3**: Agente cobaia da Fase 1? → Candidato: `team-dev-service` (tarefas operacionais, menos risco de alucinar)
 - **D4**: Quando deprecar campo `client` vazio em `teams.json` (forçar explicitamente)? → Nunca — `claude-code` permanece default
+- **D5**: Auth OAuth pra todos os CLIs (→ decidido pelo usuário: **OAuth sempre**, sem API keys)
+- **D6**: Onde mora a skill `/auth-cli` — global `~/.claude/skills/` ou versionada em `i9-team`? → Minha sugestão: global (utilitário de ambiente) com doc versionada no repo
 
-### Backlog não priorizado
+### Backlog priorizado
 
-- Skill `/multi-cli-status` pra inspecionar qual CLI está ativo em cada pane
-- Dashboard consolidado de tokens/custo por CLI/agente/dia
-- Fallback automático: se agente Gemini travar, orquestrador relança em Claude
+1. **Skill `/auth-cli`** (PRIORIDADE) — unifica auth dos 3 CLIs (Claude + Gemini + Codex). Ações: `status | claude | gemini | codex | all | reauth <cli> | revoke <cli>`. Scripts bash fazem o trabalho real; SKILL.md orquestra. Esperando instalação do Codex pra mapear fluxo dele antes de implementar.
+2. Skill `/multi-cli-status` pra inspecionar qual CLI está ativo em cada pane tmux
+3. Dashboard consolidado de tokens/custo por CLI/agente/dia
+4. Fallback automático: se agente Gemini travar, orquestrador relança em Claude
 
 ---
 
@@ -297,3 +303,68 @@ Lista do que provavelmente precisa ser feito. Cada item ganha status conforme as
 - 8 itens de trabalho técnico inventariados
 - 8 riscos mapeados
 - Próximo passo: instalar Gemini CLI no servidor e testar consumo da MCP i9-team
+
+### 2026-04-23 — v0.2 — Fase 0: Gemini CLI instalado e conectado
+
+**Instalação**
+- `npm install -g @google/gemini-cli` → versão **0.39.0**
+- Binary: `/home/ubuntu/.nvm/versions/node/v24.15.0/bin/gemini`
+
+**Estrutura do CLI descoberta**
+- Sub-comandos: `gemini mcp`, `gemini skills`, `gemini hooks`, `gemini extensions`
+- Transports MCP: **stdio, sse, http** (todos suportados)
+- Modos de aprovação: `default | auto_edit | yolo | plan` (equivalente ao permissions do Claude Code)
+- Config de MCP persiste em `~/.gemini/settings.json` (scope user) ou `.gemini/settings.json` (scope project)
+- Flags relevantes: `--allowed-mcp-server-names` (whitelist), `--include-tools`/`--exclude-tools` (filtro por tool), `--trust` (bypass confirmação)
+
+**Autenticação — OAuth (decidido "OAuth sempre")**
+- Opções disponíveis: "Sign in with Google" (OAuth), "Use Gemini API Key", "Vertex AI"
+- Fluxo OAuth em servidor sem browser:
+  1. Disparar `gemini` em sessão tmux temporária (abre TUI)
+  2. Responder modais: "Trust folder" (Enter) → selecionar "Sign in with Google" (Enter)
+  3. CLI imprime URL de OAuth com `code_challenge`, `state`, `client_id`
+  4. Usuário abre URL no browser, autoriza
+  5. Browser redireciona pra `codeassist.google.com/authcode` com `?code=4/0...` na URL
+  6. Colar o `code=...` no prompt "Enter the authorization code:" do CLI
+  7. CLI troca código por token e salva em `~/.gemini/oauth_creds.json` (chmod 600 automático)
+- Config gerada em `~/.gemini/settings.json`:
+  ```json
+  { "security": { "auth": { "selectedType": "oauth-personal" } } }
+  ```
+- Validação: `gemini -p "responda com PONG"` → **PONG** ✅
+
+**MCPs configurados (scope user)**
+- Comando: `gemini mcp add --scope user --transport stdio -e KEY=value <name> <cmd> <args>`
+- Adicionados idênticos ao `.mcp.json` do Claude:
+  - `i9-team` — sem env vars
+  - `i9-agent-memory` — com `VAULT_NAME`, `VAULT_PATH`, `DATABASE_URL`
+  - `evolution-api` — com `EVOLUTION_API_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_DEFAULT_INSTANCE`, etc
+- Resultado em `~/.gemini/settings.json` (chaves `mcpServers.*`) — estrutura **idêntica** ao `.mcp.json` do Claude Code
+
+**Quirks descobertos**
+- **Q1**: `gemini mcp list` retorna exit 0 mas **stdout vazio** — inspeção só via `jq '.mcpServers' ~/.gemini/settings.json` (R9 adicionado aos riscos)
+- **Q2**: Gemini pede "Trust folder" na primeira execução por diretório (prompt interativo) — precisa ser aceito em tmux antes de qualquer uso headless no dir
+
+**Arquivos criados em `~/.gemini/`**
+```
+settings.json          # config (auth + MCPs)
+oauth_creds.json       # token OAuth (600)
+google_accounts.json   # conta Google ativa
+installation_id        # UUID da instalação
+trustedFolders.json    # folders marcados como trust
+state.json             # estado de sessão
+projects.json          # map de project folders
+history/               # histórico de prompts
+tmp/                   # dir temporário
+```
+
+**Decisões tomadas**
+- D5: OAuth sempre (sem API keys) — pelo usuário
+- D6 (em aberto): skill de auth unificada global vs versionada no repo
+
+**Pendente pra fechar Fase 0**
+- Teste real de invocação de tool MCP via Gemini headless (`team_list_agents`)
+- Instalação do Codex CLI + auth OAuth + MCPs
+- Decidir design da skill `/auth-cli` e implementar
+
+**Próximo passo**: instalar Codex CLI pra mapear fluxo de auth antes de projetar skill `/auth-cli`.
