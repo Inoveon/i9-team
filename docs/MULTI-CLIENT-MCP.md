@@ -2,8 +2,8 @@
 
 > Documento **vivo**. Cada descoberta, decisão ou mudança entra no **Changelog** no fim e atualiza a seção relevante. Não reescrever — acrescentar.
 
-**Status atual**: Fase 0 — Discovery (Gemini instalado e conectado; Codex pendente)
-**Versão do doc**: 0.2
+**Status atual**: Fase 0 — Discovery (Gemini ✅ funcional; Codex ⚠️ MCP conecta mas detecção de contexto falha)
+**Versão do doc**: 0.3
 **Última atualização**: 2026-04-23
 
 ---
@@ -153,12 +153,14 @@ Essas APIs têm SDKs HTTP simples. MCP seria overhead desnecessário.
 - [x] Gemini CLI instalado no servidor (v0.39.0)
 - [x] Auth OAuth configurado (`selectedType: oauth-personal` em `~/.gemini/settings.json`)
 - [x] Config do Gemini apontando pras 3 MCPs via stdio (i9-team, i9-agent-memory, evolution-api)
-- [ ] Teste: `mcp__i9-team__team_list_agents` funcionando via Gemini
-- [ ] Codex CLI instalado + auth + MCPs configurados
-- [ ] Catálogo de quirks encontrados (append no Changelog)
-- [ ] Decisão: ordem de entrada do Codex na Fase 1
+- [x] Teste: `mcp__i9-team__team_list_agents` funcionando via Gemini ✅ **retornou lista real dos 5 agentes**
+- [x] Codex CLI instalado (v0.123.0) + auth ChatGPT via device flow + MCPs configurados
+- [x] Teste Codex: MCP conecta (log mostra `mcp: i9-team/team_list_agents started/completed`) mas tool retorna erro de detecção de contexto
+- [x] Catálogo de quirks encontrados (Q1 a Q7 no Changelog)
+- [ ] Investigar detecção de sessão tmux sob sandbox do Codex (requer alteração na MCP → item técnico #2)
+- [ ] Projetar skill `/auth-cli` unificada cobrindo os 3 CLIs
 
-**Critério de saída**: consigo invocar pelo menos 3 tools da MCP i9-team a partir do Gemini CLI e do Codex CLI sem erro.
+**Critério de saída**: ✅ parcialmente alcançado — Gemini totalmente funcional; Codex precisa da adaptação da MCP (env vars explícitas via config do cliente) pra fechar 100%.
 
 ### Fase 1 — POC com 1 agente cobaia
 
@@ -253,6 +255,8 @@ Lista do que provavelmente precisa ser feito. Cada item ganha status conforme as
 | R7 | Env vars injetadas pelo config do cliente podem não chegar à MCP filha | Baixa | Testar em Fase 0; usar `Environment=` do systemd como backup |
 | R8 | Bridge Protocol pode falhar se orquestrador destino receber texto de CLI diferente | Baixa | Princípio 5 (bridge é Claude-to-Claude) já elimina |
 | R9 | `gemini mcp list` não retorna output (exit 0, stdout vazio) — dificulta inspeção de estado | Baixa | Inspeção direta via `jq '.mcpServers' ~/.gemini/settings.json`; reportar upstream |
+| R10 | Codex sandbox isola env vars do processo filho — MCP i9-team não detecta sessão tmux | Alta | Item técnico #2 (env vars `MCP_CLIENT_ID`/`MCP_AGENT_NAME` injetadas via config do cliente) resolve |
+| R11 | Gemini polui output com `[WARN]` de dirs sem permissão (barulho em CWDs com restrições) | Baixa | Rodar o CLI de dentro de um CWD limpo (ex: raiz do projeto), não de `/tmp` |
 
 ---
 
@@ -368,3 +372,83 @@ tmp/                   # dir temporário
 - Decidir design da skill `/auth-cli` e implementar
 
 **Próximo passo**: instalar Codex CLI pra mapear fluxo de auth antes de projetar skill `/auth-cli`.
+
+### 2026-04-23 — v0.3 — Fase 0: Codex CLI + validação funcional
+
+**Codex CLI instalado**
+- `npm install -g @openai/codex` → versão **0.123.0** (research preview)
+- Binary: `/home/ubuntu/.nvm/versions/node/v24.15.0/bin/codex`
+
+**Estrutura descoberta**
+- Config em **TOML** (diferente de Claude/Gemini que usam JSON): `~/.codex/config.toml`
+- Sub-comandos: `codex login`, `codex mcp`, `codex exec`, `codex mcp-server` (Codex **pode ser** MCP server pra outros clientes 🤯), `codex apply`, `codex cloud`, `codex sandbox`
+- Flags importantes:
+  - `--skip-git-repo-check` — Codex exige git repo por default (proteção)
+  - `-s/--sandbox` — modo sandbox (default: isolado)
+  - `--dangerously-bypass-approvals-and-sandbox` — bypass total (usar com cuidado)
+  - `--device-auth` — OAuth device flow (essencial pra servidor headless)
+- `codex mcp add <NAME> -- <COMMAND>...` (sintaxe com `--` como separador)
+- `--env KEY=VALUE` pra env vars
+
+**Autenticação — OAuth device flow via ChatGPT**
+- Comando: `codex login --device-auth`
+- Fluxo:
+  1. CLI imprime URL `https://auth.openai.com/codex/device` + código de 8 chars (ex: `XQ4G-ZT2V5`)
+  2. Usuário abre URL no browser, loga com conta ChatGPT/OpenAI
+  3. Cola o código na página, autoriza
+  4. CLI (fazendo polling) detecta sozinho, salva token em `~/.codex/auth.json` (chmod 600)
+  5. `codex login status` → `Logged in using ChatGPT`
+- Tempo de expiração do código: **15 minutos**
+
+**MCPs configurados**
+- Comando: `codex mcp add <name> --env K=V -- <cmd> <arg>`
+- Adicionadas as 3 MCPs idênticas ao Claude
+- `codex mcp list` **FUNCIONA** (diferente do Gemini) — tabela com colunas Name, Command, Args, Env, Cwd, Status, Auth
+- Env vars **mascaradas com `*****`** no list — melhor segurança que os outros
+- Coluna **Auth** indica "Unsupported" pros nossos MCPs (mas Codex suporta `codex mcp login <server>` pra MCPs que expõem auth próprio — recurso novo!)
+- Config gerada em `~/.codex/config.toml`:
+  ```toml
+  [mcp_servers.i9-team]
+  command = "..."
+  args = [...]
+  
+  [mcp_servers.i9-agent-memory]
+  command = "..."
+  [mcp_servers.i9-agent-memory.env]
+  VAULT_NAME = "..."
+  ```
+
+**Validação funcional — invocação de tool MCP**
+
+| Teste | Cliente | CWD | Resultado |
+|---|---|---|---|
+| 1 | Codex (`--dangerously-bypass-approvals-and-sandbox`) | `/tmp` | MCP inicia ✅, tool retorna erro "não foi possível detectar sessão tmux" ❌ |
+| 2 | Codex + env vars I9_TEAM_SESSION/I9_PROJECT/I9_TEAM/I9_AGENT | `/tmp` | "tool não disponível" ⚠️ — possível cache de sessão |
+| 3 | Gemini (`--yolo`) | `/tmp` | ✅ **Retornou lista real dos 5 agentes do team i9-team/dev** |
+
+**Diagnóstico**:
+- Gemini **herda `$TMUX`** do processo pai e a MCP consegue detectar a sessão tmux do Claude Code
+- Codex **isola env** mesmo com bypass de sandbox → MCP não detecta contexto → tool rejeita
+- Isso é exatamente o cenário que o **item técnico #2** previa: MCP precisa aceitar identidade via env vars explícitas do cliente, não só heurísticas de tmux
+
+**Quirks descobertos (Q3–Q7)**
+- **Q3**: Config Codex em **TOML** (exige parser diferente de JSON dos outros)
+- **Q4**: Codex exige git repo por padrão — precisa `--skip-git-repo-check` em CWDs livres
+- **Q5**: Codex sandbox **isola env vars** — MCP não vê `$TMUX`, `$I9_*`, etc mesmo com bypass
+- **Q6**: `codex mcp list` mascaram env values com `*****` (feature boa, não bug)
+- **Q7**: Codex CLI tem `codex mcp-server` — pode expor o próprio Codex como MCP server pra outros clientes (tema pra explorar)
+
+**Tabela de compatibilidade atualizada**
+
+| Cliente | Auth | MCP config | MCP list | Invoke tool | Detecta tmux |
+|---|---|---|---|---|---|
+| Claude Code | ✅ | ✅ | ✅ | ✅ | ✅ (nativo) |
+| Gemini CLI | ✅ OAuth Google | ✅ | ❌ Q1 | ✅ | ✅ (herda $TMUX) |
+| Codex CLI | ✅ OAuth ChatGPT | ✅ | ✅ | ⚠️ MCP inicia mas tool falha | ❌ Q5 (sandbox isola env) |
+
+**Decisões tomadas**
+- Gemini já pode ir pra Fase 1 (POC) **sem alterar MCP**
+- Codex precisa da adaptação do item técnico #2 antes de virar agente útil — **essa é a cobaia perfeita do item #2**
+- Skill `/auth-cli` tem os 3 fluxos mapeados agora — design pode ser finalizado
+
+**Próximo passo**: atualizar a tabela de compatibilidade no topo do doc (seção "Compatibilidade") e projetar a skill `/auth-cli` com os 3 fluxos documentados.
