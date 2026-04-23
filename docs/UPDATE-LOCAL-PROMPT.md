@@ -116,23 +116,38 @@ codex mcp add i9-tools -- $(which node) $HOME/mcp-servers/i9-tools/dist/index.js
 
 Se não tem Codex: `npm install -g @openai/codex` → `codex login --device-auth`
 
-## Passo 5 — Atualizar skills globais
+## Passo 5 — Skills globais (via repo `inoveon-skills`)
 
-O servidor tem 3 skills novas/atualizadas em `~/.claude/skills/`. Busque elas no repo `i9-team` ou no servidor via rsync/scp. Se tiver acesso SSH ao servidor:
+**NOVIDADE 2026-04-23**: Todas as skills do ecossistema Inoveon agora vivem num repo próprio versionado: `Inoveon/inoveon-skills`. Elas são linkadas via symlinks em `~/.claude/skills/`.
 
 ```bash
-# Ajuste o hostname
-SERVER=ubuntu-claude-agents  # ou IP do servidor Inoveon
-rsync -av ubuntu@$SERVER:~/.claude/skills/team-auth-cli/ ~/.claude/skills/team-auth-cli/
-rsync -av ubuntu@$SERVER:~/.claude/skills/team-task-router/ ~/.claude/skills/team-task-router/
-rsync -av ubuntu@$SERVER:~/.claude/skills/team-protocol/SKILL.md ~/.claude/skills/team-protocol/SKILL.md
+# Clone o repo
+git clone git@github.com:Inoveon/inoveon-skills.git ~/inoveon-skills
+
+# Instala (cria symlinks em ~/.claude/skills/ apontando pro repo)
+cd ~/inoveon-skills && ./scripts/install.sh
+
+# Confirma
+./scripts/status.sh
 ```
 
-Se **não** tiver SSH pro servidor, clone do repo:
-- `team-task-router` e `team-auth-cli` não estão versionados no repo i9-team (moram em `~/.claude/skills/`)
-- Você pode pedir pro Claude do servidor empacotar elas via skill `/skill-pack` e enviar por WhatsApp/email
+Esperado: 38-39 skills linkadas (varia conforme atualizações).
 
-Ou criar manualmente a partir do `docs/i9-tools-TOKENS.md` (tem as instruções principais).
+**Se você (Lee) está na sua máquina MacBook/WSL com skills que só existem aí**:
+O status vai listar várias como `⚠️ local-dir` — são candidatas a import pro repo. Pra cada uma que quer versionar:
+
+```bash
+cd ~/inoveon-skills
+./scripts/import.sh <nome-da-skill>
+git add skills/<nome-da-skill>
+git commit -m "feat(skills): adiciona <nome> (import do Mac)"
+git push
+```
+
+Depois no servidor: `./scripts/sync.sh` puxa a nova skill automaticamente.
+
+**Skills com symlinks quebrados** (ex: apontando pra `/Users/leechardes/...` no Linux):
+O `install.sh` já faz backup automático e sobrescreve quando há skill com mesmo nome no repo. Broken symlinks sem correspondente no repo ficam lá até você limpar manualmente com `rm ~/.claude/skills/<nome>`.
 
 ## Passo 6 — Atualizar scripts team.sh + team-agent-boot.sh
 
