@@ -9,3 +9,6 @@
 [submodule "mobile"]
 	path = mobile
 	url = https://github.com/Inoveon/i9-team-mobile.git
+[submodule "tools"]
+	path = tools
+	url = https://github.com/Inoveon/i9-team-tools.git
